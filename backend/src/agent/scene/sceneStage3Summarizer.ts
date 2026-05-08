@@ -18,7 +18,7 @@
  */
 
 import { query as sdkQuery } from '@anthropic-ai/claude-agent-sdk';
-import { createSdkEnv, loadClaudeConfig } from '../../agentv3/claudeConfig';
+import { createSdkEnv, loadClaudeConfig, resolveClaudeCodeBinaryPath } from '../../agentv3/claudeConfig';
 import {
   DisplayedScene,
   SceneAnalysisJob,
@@ -58,6 +58,7 @@ export async function runStage3Summary(
         maxTurns: 1,
         permissionMode: 'bypassPermissions' as const,
         allowDangerouslySkipPermissions: true,
+        pathToClaudeCodeExecutable: resolveClaudeCodeBinaryPath(),
         env: createSdkEnv(),
         stderr: (data: string) => {
           console.warn(`[SceneStage3Summarizer] SDK stderr: ${data.trimEnd()}`);

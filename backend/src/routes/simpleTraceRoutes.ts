@@ -13,7 +13,7 @@ import { getPortPool } from '../services/portPool';
 import { TraceProcessorFactory } from '../services/workingTraceProcessor';
 
 const router = Router();
-const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = parseInt(process.env.MAX_FILE_SIZE || '2147483648'); // 2GB default
 const URL_UPLOAD_TIMEOUT_MS = 300000;
 
 async function finalizeTraceUpload(

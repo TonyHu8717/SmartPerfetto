@@ -223,8 +223,19 @@ export class WorkingTraceProcessor extends EventEmitter implements TraceProcesso
    */
   private async startHttpServer(): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Build CORS origins string from config
-      const corsOrigins = `${traceProcessorConfig.perfettoUiOrigin},${traceProcessorConfig.perfettoUiOrigin.replace('localhost', '127.0.0.1')}`;
+      // Build CORS origins string from config — include LAN origin if configured
+      const origins = [traceProcessorConfig.perfettoUiOrigin];
+      const primary = traceProcessorConfig.perfettoUiOrigin;
+      // Always allow 127.0.0.1 variant alongside localhost
+      if (primary.includes('localhost')) {
+        origins.push(primary.replace('localhost', '127.0.0.1'));
+      }
+      // If LAN IP is configured (non-localhost origin), also allow localhost access
+      if (!primary.includes('localhost') && !primary.includes('127.0.0.1')) {
+        origins.push(primary.replace(/\/\/[^:/]+/, '//localhost'));
+        origins.push(primary.replace(/\/\/[^:/]+/, '//127.0.0.1'));
+      }
+      const corsOrigins = origins.join(',');
       const args = [
         '--httpd',
         '--http-port', String(this.httpPort),

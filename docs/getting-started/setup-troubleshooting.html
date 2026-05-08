@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPerfetto 环境搭建与问题排查指南</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --accent-bg: #1f6feb22;
+      --success: #3fb950;
+      --success-bg: #23863622;
+      --warning: #d29922;
+      --warning-bg: #9e6a0322;
+      --danger: #f85149;
+      --danger-bg: #da363422;
+      --code-bg: #0d1117;
+      --table-stripe: #161b2288;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    h2 {
+      font-size: 1.4rem;
+      color: var(--accent);
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      padding-left: 0.5rem;
+      border-left: 3px solid var(--accent);
+    }
+    h3 {
+      font-size: 1.15rem;
+      color: var(--text);
+      margin-top: 1.8rem;
+      margin-bottom: 0.6rem;
+    }
+    p { margin-bottom: 0.8rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.88em;
+    }
+    :not(pre) > code {
+      background: var(--accent-bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8rem 0;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.8rem;
+      text-align: left;
+    }
+    th {
+      background: var(--surface);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    tr:nth-child(even) { background: var(--table-stripe); }
+
+    /* Callouts */
+    .callout {
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      margin: 1rem 0;
+      border-left: 4px solid;
+    }
+    .callout-warning { border-color: var(--warning); background: var(--warning-bg); }
+    .callout-danger { border-color: var(--danger); background: var(--danger-bg); }
+    .callout-success { border-color: var(--success); background: var(--success-bg); }
+    .callout-info { border-color: var(--accent); background: var(--accent-bg); }
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* TOC */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .toc h3 { margin-top: 0; color: var(--accent); }
+    .toc ul { padding-left: 1.2rem; }
+    .toc li { margin: 0.3rem 0; }
+
+    /* Checklists */
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li::before {
+      content: "☐ ";
+      color: var(--text-secondary);
+    }
+
+    /* Section divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    /* Inline labels */
+    .label {
+      display: inline-block;
+      padding: 0.1em 0.5em;
+      border-radius: 3px;
+      font-size: 0.82em;
+      font-weight: 600;
+    }
+    .label-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+    .label-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning); }
+    .label-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+  </style>
+</head>
+<body>
+
+<h1>SmartPerfetto 环境搭建与问题排查指南</h1>
+
+<p>本文档记录了在 WSL2 Ubuntu (glibc) 环境下搭建 SmartPerfetto 的完整过程、遇到的问题及其原因分析和解决方案。<strong>换一个新环境后，按照此文档可以顺利搭建并处理常见问题</strong>。</p>
+
+<div class="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#env-requirements">1. 环境要求</a></li>
+    <li><a href="#quick-setup">2. 快速搭建步骤</a></li>
+    <li><a href="#ai-config">3. AI 模型配置</a></li>
+    <li><a href="#troubleshooting">4. 问题与解决方案</a>
+      <ul>
+        <li><a href="#trace-processor-download">4.1 trace_processor_shell 下载失败</a></li>
+        <li><a href="#upload-size-limit">4.2 文件上传大小限制</a></li>
+        <li><a href="#musl-binary-issue">4.3 Claude Agent SDK musl 二进制兼容性问题</a></li>
+        <li><a href="#frontend-killed">4.4 前端服务被意外终止</a></li>
+        <li><a href="#ai-not-connected">4.5 AI 后端未连接</a></li>
+        <li><a href="#lan-access">4.6 局域网访问配置</a></li>
+      </ul>
+    </li>
+    <li><a href="#config-reference">5. 配置速查表</a></li>
+    <li><a href="#verification">6. 验证清单</a></li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="env-requirements">1. 环境要求</h2>
+
+<table>
+  <thead><tr><th>组件</th><th>最低版本</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>Node.js</td><td>v20+</td><td>推荐 v24.x（通过 nvm 安装）</td></tr>
+    <tr><td>npm</td><td>v10+</td><td>随 Node.js 安装</td></tr>
+    <tr><td>git</td><td>v2+</td><td>克隆仓库</td></tr>
+    <tr><td>WSL2</td><td>-</td><td>Windows 下 Linux 开发环境（Ubuntu 22.04/24.04）</td></tr>
+    <tr><td>磁盘空间</td><td>~5 GB</td><td>依赖 + trace_processor_shell + 上传目录</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <div class="callout-title">&#9432; 网络要求</div>
+  <ul style="margin:0; padding-left:1.2rem;">
+    <li>Google LUCI artifact server (<code>commondatastorage.googleapis.com</code>) 可能从国内/WSL2 环境无法直接访问</li>
+    <li>需要能访问 LLM API 代理地址（如 <code>https://llmapi.horizon.auto</code>）</li>
+  </ul>
+</div>
+
+<h2 id="quick-setup">2. 快速搭建步骤</h2>
+
+<h3>2.1 克隆仓库</h3>
+<pre><code>git clone https://github.com/Gracker/SmartPerfetto.git
+cd SmartPerfetto</code></pre>
+
+<div class="callout callout-info">
+  普通使用不需要初始化 <code>perfetto/</code> submodule。只有修改 AI Assistant 前端插件时才需要。
+</div>
+
+<h3>2.2 安装后端依赖</h3>
+<pre><code>cd backend
+npm install
+cd ..</code></pre>
+
+<h3>2.3 配置环境变量</h3>
+<pre><code>cp backend/.env.example backend/.env</code></pre>
+<p>编辑 <code>backend/.env</code>，至少配置 AI 模型相关变量（详见<a href="#ai-config">第 3 节</a>）。</p>
+
+<h3>2.4 启动服务</h3>
+<pre><code>./start.sh</code></pre>
+<p>首次启动会自动下载 <code>trace_processor_shell</code>。如果下载失败，参考 <a href="#trace-processor-download">4.1 节</a>。</p>
+
+<h3>2.5 验证服务</h3>
+<table>
+  <thead><tr><th>检查项</th><th>命令/URL</th><th>预期结果</th></tr></thead>
+  <tbody>
+    <tr><td>后端健康</td><td><code>curl http://localhost:3000/health</code></td><td><code>{"status":"OK",...}</code></td></tr>
+    <tr><td>前端</td><td>浏览器打开 <code>http://localhost:10000</code></td><td>Perfetto UI 界面</td></tr>
+    <tr><td>AI 配置</td><td>health 响应中 <code>aiEngine.configured</code></td><td><code>true</code></td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="ai-config">3. AI 模型配置</h2>
+
+<p>SmartPerfetto 使用 Claude Agent SDK 作为 AI 运行时。有三种接入方式：</p>
+
+<h3>3.1 Claude Code 本地认证（零配置）</h3>
+<p>如果本机 <code>claude</code> 命令已经能正常工作（包括通过 Claude Code 配置了第三方 endpoint），可以不创建 <code>.env</code> 文件。SDK 会自动使用 Claude Code 的本地认证。</p>
+
+<h3>3.2 Anthropic 直连</h3>
+<pre><code>ANTHROPIC_API_KEY=sk-ant-xxx</code></pre>
+
+<h3>3.3 第三方 LLM 代理（最常用）</h3>
+<p>通过 Anthropic Messages 兼容代理接入 DeepSeek/GLM/Qwen/Kimi 等第三方模型：</p>
+<pre><code>ANTHROPIC_BASE_URL=https://your-proxy-endpoint   # 代理地址
+ANTHROPIC_API_KEY=your-proxy-token                 # 代理认证 token
+CLAUDE_MODEL=your-main-model                       # 主模型名称
+CLAUDE_LIGHT_MODEL=your-light-model                # 轻量模型（用于验证/分类）</code></pre>
+
+<div class="callout callout-success">
+  <div class="callout-title">&#10003; 完整示例（使用 GLM-5 代理）</div>
+<pre><code># backend/.env
+ANTHROPIC_API_KEY=your-proxy-token
+ANTHROPIC_BASE_URL=https://llmapi.horizon.auto
+CLAUDE_MODEL=GLM-5
+SMARTPERFETTO_OUTPUT_LANGUAGE=zh-CN</code></pre>
+</div>
+
+<div class="callout callout-warning">
+  <div class="callout-title">&#9888; 重要提示</div>
+  <ul style="margin:0; padding-left:1.2rem;">
+    <li>代理必须支持 <strong>Anthropic Messages API 格式</strong>（不是 OpenAI 格式）</li>
+    <li>代理必须支持 <strong>流式输出</strong> 和 <strong>tool/function calling</strong></li>
+    <li>常用代理：<a href="https://github.com/songquanpeng/one-api">one-api</a>、<a href="https://github.com/Calcium-Ion/new-api">new-api</a>、<a href="https://github.com/BerriAI/litellm">LiteLLM</a></li>
+    <li>如果代理只映射了一个模型，把 <code>CLAUDE_LIGHT_MODEL</code> 设为与 <code>CLAUDE_MODEL</code> 相同的值</li>
+  </ul>
+</div>
+
+<h3>3.4 慢模型超时配置</h3>
+<p>非 Anthropic 模型（DeepSeek/Ollama/GLM/Qwen）通常需要更长的超时时间：</p>
+<pre><code>CLAUDE_FULL_PER_TURN_MS=60000       # 完整分析每轮超时（默认 60s）
+CLAUDE_QUICK_PER_TURN_MS=40000      # 快速分析每轮超时（默认 40s）
+CLAUDE_VERIFIER_TIMEOUT_MS=60000    # 验证器单轮超时（默认 60s）
+CLAUDE_CLASSIFIER_TIMEOUT_MS=30000  # 分类器超时（默认 30s）</code></pre>
+
+<hr>
+
+<h2 id="troubleshooting">4. 问题与解决方案</h2>
+
+<!-- ============================================================ -->
+<h3 id="trace-processor-download">4.1 trace_processor_shell 下载失败（Google LUCI 不可达）</h3>
+
+<p><span class="label label-danger">现象</span> <code>./start.sh</code> 在下载 <code>trace_processor_shell</code> 时卡住或超时，错误涉及 <code>commondatastorage.googleapis.com</code>。</p>
+
+<p><span class="label label-warning">原因</span> Google LUCI artifact server 从国内或部分 WSL2 环境无法直接访问。<code>start.sh</code> 和 <code>start-dev.sh</code> 默认从 Google 服务器下载固定版本的 <code>trace_processor_shell</code> 二进制。</p>
+
+<p><span class="label label-success">解决方案</span></p>
+
+<h4>方案 A：手动下载（推荐）</h4>
+<pre><code># 1. 使用可访问的网络下载二进制
+wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v54.0/linux-amd64/trace_processor_shell
+
+# 2. 放置到指定目录
+mkdir -p perfetto/out/ui/
+mv trace_processor_shell perfetto/out/ui/trace_processor_shell
+chmod +x perfetto/out/ui/trace_processor_shell
+
+# 3. 验证
+./perfetto/out/ui/trace_processor_shell --version</code></pre>
+
+<h4>方案 B：使用已有 binary 环境变量</h4>
+<pre><code>TRACE_PROCESSOR_PATH=/absolute/path/to/trace_processor_shell ./start.sh</code></pre>
+
+<h4>方案 C：使用镜像</h4>
+<pre><code># 使用保持相同目录结构的可信镜像
+TRACE_PROCESSOR_DOWNLOAD_BASE=https://your-mirror/perfetto-luci-artifacts ./start.sh
+
+# 或使用当前平台的精确 binary URL
+TRACE_PROCESSOR_DOWNLOAD_URL=https://your-mirror/trace_processor_shell ./start.sh</code></pre>
+
+<h4>方案 D：Docker 运行（免下载）</h4>
+<pre><code>docker compose -f docker-compose.hub.yml pull
+docker compose -f docker-compose.hub.yml up -d</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-title">&#9432; 版本说明</div>
+  下载版本由 <code>scripts/trace-processor-pin.env</code> 固定。升级 perfetto submodule 时需同步更新此文件中的版本号和 SHA256 校验值。
+</div>
+
+<!-- ============================================================ -->
+<h3 id="upload-size-limit">4.2 文件上传大小限制 (MulterError: LIMIT_FILE_SIZE)</h3>
+
+<p><span class="label label-danger">现象</span> 上传较大的 trace 文件时，后端返回 500 错误，日志显示：</p>
+<pre><code>MulterError: File too large
+  code: 'LIMIT_FILE_SIZE'</code></pre>
+
+<p><span class="label label-warning">原因</span> <code>backend/src/routes/simpleTraceRoutes.ts</code> 中的 <code>multer</code> 中间件有文件大小限制。旧版本代码中该限制被<strong>硬编码为 500MB</strong>：</p>
+<pre><code>// 旧代码 — 硬编码 500MB
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;</code></pre>
+<p>而 <code>MAX_FILE_SIZE</code> 环境变量默认值为 2GB（<code>2147483648</code>），两者不一致导致即使环境变量设对了，实际上传仍被 500MB 限制拦截。</p>
+
+<p><span class="label label-success">解决方案</span> 已在代码中修复，改为读取环境变量：</p>
+<pre><code>// 新代码 — 读取环境变量，默认 2GB
+const MAX_UPLOAD_BYTES = parseInt(process.env.MAX_FILE_SIZE || '2147483648');</code></pre>
+
+<div class="callout callout-info">
+  在 <code>backend/.env</code> 中设置 <code>MAX_FILE_SIZE=2147483648</code>（2GB），重启后端后上传大文件。
+</div>
+
+<!-- ============================================================ -->
+<h3 id="musl-binary-issue">4.3 Claude Agent SDK musl 二进制兼容性问题（WSL2/glibc）</h3>
+
+<p><span class="label label-danger">现象</span> AI 分析启动后立即失败，错误信息：</p>
+<pre><code>Claude Code native binary not found at
+  .../node_modules/@anthropic-ai/claude-agent-sdk-linux-x64-musl/claude.
+Please ensure Claude Code is installed via native installer
+or specify a valid path</code></pre>
+
+<p><span class="label label-warning">原因</span> Claude Agent SDK 在 Linux 平台上有两个二进制变体：</p>
+
+<table>
+  <thead><tr><th>变体</th><th>npm 包</th><th>动态链接器</th><th>适用系统</th></tr></thead>
+  <tbody>
+    <tr><td>musl</td><td><code>claude-agent-sdk-linux-x64-musl</code></td><td><code>/lib/ld-musl-x86_64.so.1</code></td><td>Alpine Linux 等 musl 系统</td></tr>
+    <tr><td>glibc</td><td><code>claude-agent-sdk-linux-x64</code></td><td><code>/lib64/ld-linux-x86-64.so.2</code></td><td>Ubuntu/Debian/CentOS 等 glibc 系统</td></tr>
+  </tbody>
+</table>
+
+<p>SDK 的二进制发现逻辑在 Linux 上<strong>优先选择 musl 变体</strong>（<code>linux-x64-musl</code>），然后才 fallback 到 glibc 变体（<code>linux-x64</code>）。问题是：在 glibc 系统（如 WSL2 Ubuntu）上，musl 二进制文件虽然存在于 <code>node_modules</code> 中，但<strong>无法执行</strong>——因为系统缺少 musl 动态链接器 <code>/lib/ld-musl-x86_64.so.1</code>。</p>
+
+<p>当 SDK 尝试执行 musl 二进制时，Linux 内核返回 <code>ENOENT</code>（找不到动态链接器），shell 报 <code>not found</code>，SDK 将此解读为 "binary not found" 而不是 "binary incompatible"，导致错误信息具有误导性。</p>
+
+<h4>验证方法</h4>
+<pre><code># 检查系统是否为 glibc
+ls /lib64/ld-linux-x86-64.so.2  # 存在 = glibc 系统
+
+# 测试 musl 二进制（在 glibc 系统上会失败）
+./node_modules/@anthropic-ai/claude-agent-sdk-linux-x64-musl/claude --version
+# 输出: not found（实际上是动态链接器缺失）
+
+# 测试 glibc 二进制（正常工作）
+./node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude --version
+# 输出: 2.1.132 (Claude Code)</code></pre>
+
+<p><span class="label label-success">解决方案</span> 已在 <code>backend/src/agentv3/claudeConfig.ts</code> 中添加了 <code>resolveClaudeCodeBinaryPath()</code> 函数，该函数：</p>
+<ol style="padding-left:1.5rem; margin:0.5rem 0;">
+  <li>优先检查 <code>CLAUDE_CODE_BINARY_PATH</code> 环境变量（用户手动指定）</li>
+  <li>在 Linux 上检测 <code>/lib64/ld-linux-x86-64.so.2</code> 是否存在（判断是否为 glibc 系统）</li>
+  <li>如果是 glibc 系统，解析并返回 glibc 变体的路径</li>
+</ol>
+
+<p>所有 7 个 <code>sdkQuery</code> 调用点已注入 <code>pathToClaudeCodeExecutable: resolveClaudeCodeBinaryPath()</code>：</p>
+
+<table>
+  <thead><tr><th>文件</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>claudeRuntime.ts</code></td><td>主编排器（通过 <code>sdkQueryWithRetry</code>）</td></tr>
+    <tr><td><code>claudeVerifier.ts</code></td><td>结论验证器</td></tr>
+    <tr><td><code>queryComplexityClassifier.ts</code></td><td>查询复杂度分类</td></tr>
+    <tr><td><code>criticalPathAiSummary.ts</code></td><td>关键路径 AI 摘要</td></tr>
+    <tr><td><code>sceneStage3Summarizer.ts</code></td><td>场景摘要</td></tr>
+    <tr><td><code>flamegraphAiSummary.ts</code></td><td>火焰图 AI 摘要</td></tr>
+    <tr><td><code>reviewAgentSdk.ts</code></td><td>自改进审查代理</td></tr>
+  </tbody>
+</table>
+
+<h4>手动覆盖</h4>
+<p>如果自动检测有问题，可以设置环境变量：</p>
+<pre><code># backend/.env
+CLAUDE_CODE_BINARY_PATH=/absolute/path/to/claude-agent-sdk-linux-x64/claude</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-title">&#9432; 适用环境</div>
+  此问题影响所有 glibc Linux 系统（Ubuntu/Debian/CentOS/WSL2），不影响 macOS 和 Windows。
+</div>
+
+<!-- ============================================================ -->
+<h3 id="frontend-killed">4.4 前端服务被意外终止（restart-backend.sh 副作用）</h3>
+
+<p><span class="label label-danger">现象</span> 运行 <code>./scripts/restart-backend.sh</code> 后，前端服务也被关闭了。</p>
+
+<p><span class="label label-warning">原因</span> <code>start.sh</code> 在一个进程组中同时启动前端和后端。<code>restart-backend.sh</code> 会杀掉原始进程组，其中包括前端进程。</p>
+
+<p><span class="label label-success">解决方案</span></p>
+<ol style="padding-left:1.5rem; margin:0.5rem 0;">
+  <li><strong>只用 <code>./start.sh</code></strong>：正常启动和重启都通过 <code>start.sh</code>，它会自动处理进程清理</li>
+  <li><strong>后端热重载</strong>：<code>tsx watch</code> 会检测 <code>.ts</code> 文件变更并自动重载，不需要手动重启后端</li>
+  <li><strong>手动重启前端</strong>：如果前端被意外终止，单独启动：<pre><code>node frontend/server.js</code></pre></li>
+  <li><strong>仅 <code>.env</code> 变更需要手动重启</strong>：后端的环境变量变更需要 <code>restart-backend.sh</code> 或手动重启后端进程</li>
+</ol>
+
+<div class="callout callout-warning">
+  <div class="callout-title">&#9888; 什么时候用 restart-backend.sh</div>
+  <ul style="margin:0; padding-left:1.2rem;">
+    <li>修改了 <code>backend/.env</code></li>
+    <li>执行了 <code>npm install</code></li>
+    <li><code>tsx watch</code> 卡住不响应</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h3 id="ai-not-connected">4.5 AI 后端未连接</h3>
+
+<p><span class="label label-danger">现象</span> 前端 AI Assistant 面板显示：</p>
+<pre><code>AI 后端未连接
+无法连接到 AI 分析后端 (http://localhost:3000)</code></pre>
+
+<p><span class="label label-success">排查步骤</span></p>
+<ol style="padding-left:1.5rem; margin:0.5rem 0;">
+  <li><strong>确认后端正在运行</strong>：<pre><code>curl http://localhost:3000/health</code></pre></li>
+  <li><strong>确认 AI 已配置</strong>：health 响应中 <code>aiEngine.configured</code> 应为 <code>true</code></li>
+  <li><strong>确认 <code>.env</code> 文件存在</strong>：<pre><code>ls backend/.env</code></pre></li>
+  <li><strong>确认 CORS 配置正确</strong>：<pre><code># backend/.env 中应有
+FRONTEND_URL=http://localhost:10000</code></pre></li>
+  <li><strong>查看后端日志</strong>：<pre><code>tail -50 logs/backend_latest.log</code></pre></li>
+</ol>
+
+<!-- ============================================================ -->
+<h3 id="lan-access">4.6 局域网访问配置</h3>
+
+<p><span class="label label-danger">现象</span> 其他设备（手机、另一台电脑）无法通过局域网 IP 访问 SmartPerfetto，或从 LAN IP 访问时 AI 助手无法连接后端。</p>
+
+<p><span class="label label-warning">原因</span> 后端和前端的 <code>listen()</code> 不指定 hostname，Node.js 默认绑定 <code>0.0.0.0</code>（所有接口），所以服务本身局域网可达。但以下几个配置默认假设 <code>localhost</code> 访问，从其他机器用 LAN IP 访问时会被 CORS 或 CSP 拦截：</p>
+
+<table>
+  <thead><tr><th>配置项</th><th>默认值</th><th>问题</th></tr></thead>
+  <tbody>
+    <tr><td><code>FRONTEND_URL</code></td><td><code>http://localhost:10000</code></td><td>CORS 检查拒绝非 localhost 来源</td></tr>
+    <tr><td><code>PERFETTO_UI_ORIGIN</code></td><td><code>http://localhost:10000</code></td><td>trace_processor_shell CORS 拒绝</td></tr>
+    <tr><td><code>CORS_ORIGINS</code></td><td>仅含 localhost</td><td>后端 CORS 中间件拒绝</td></tr>
+    <tr><td>前端 JS <code>getBackendUrl()</code></td><td><code>http://localhost:3000</code></td><td>浏览器尝试连 localhost 而非 LAN IP</td></tr>
+    <tr><td>CSP <code>connect-src</code></td><td>仅含 <code>localhost:3000</code></td><td>浏览器 CSP 阻止 fetch 到 LAN IP</td></tr>
+  </tbody>
+</table>
+
+<p><strong>额外原因（WSL2 环境）</strong>：WSL2 运行在 Hyper-V 虚拟机内，拥有独立虚拟网卡 IP（如 <code>172.21.x.x</code>），与 Windows 宿主通过 NAT 隔离。局域网设备只能路由到 Windows 的真实网卡 IP（如 <code>192.168.1.100</code>），无法直接访问 WSL2 内部服务。需要在 Windows 侧设置端口转发。</p>
+
+<pre><code>外部设备 → Windows 网卡 (192.168.1.100:端口)
+         → netsh portproxy 转发
+         → WSL2 虚拟机 (172.21.x.x:端口)
+         → SmartPerfetto 服务</code></pre>
+
+<p><span class="label label-success">解决方案</span></p>
+
+<h4>1. 获取网络地址</h4>
+<pre><code># WSL2 内部 IP（服务实际运行位置）
+hostname -I | awk '{print $1}'
+# 例如: 172.21.237.238
+
+# Windows LAN IP（在 Windows PowerShell 中运行）
+ipconfig | findstr "IPv4"
+# 例如: 192.168.1.100</code></pre>
+
+<h4>2. 修改 <code>backend/.env</code></h4>
+<p>添加/更新以下变量，使用 <strong>Windows LAN IP</strong>，不是 WSL2 内部 IP：</p>
+<pre><code># 将 &lt;WINDOWS_LAN_IP&gt; 替换为 Windows 侧的局域网 IP
+FRONTEND_URL=http://&lt;WINDOWS_LAN_IP&gt;:10000
+PERFETTO_UI_ORIGIN=http://&lt;WINDOWS_LAN_IP&gt;:10000
+CORS_ORIGINS=http://localhost:8080,http://localhost:5173,http://localhost:5174,http://localhost:10000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:10000,http://&lt;WINDOWS_LAN_IP&gt;:10000</code></pre>
+
+<h4>3. 前端 JS 动态 URL（已修改）</h4>
+<p><code>assistant-critical-path.js</code> 和 <code>assistant-flamegraph.js</code> 中的 <code>getBackendUrl()</code> fallback 已从 <code>http://localhost:3000</code> 改为 <code>location.protocol + '//' + location.hostname + ':3000'</code>，自动适配当前访问地址。</p>
+
+<h4>4. CSP 白名单（已修改）</h4>
+<p><code>frontend_bundle.js</code> 的 <code>connect-src</code> 已加入 LAN IP。</p>
+
+<h4>5. trace_processor_shell CORS（已修改）</h4>
+<p><code>workingTraceProcessor.ts</code> 已支持自动生成 localhost + LAN IP 双向 CORS origins。</p>
+
+<h4>6. Windows 端口转发（WSL2 环境必需）</h4>
+<p>在 <strong>Windows PowerShell（管理员）</strong> 中运行：</p>
+<pre><code># 将 &lt;WSL_IP&gt; 替换为 WSL2 内部 IP（步骤 1 中获取的值）
+netsh interface portproxy add v4tov4 listenport=3000 listenaddress=0.0.0.0 connectport=3000 connectaddress=&lt;WSL_IP&gt;
+netsh interface portproxy add v4tov4 listenport=10000 listenaddress=0.0.0.0 connectport=10000 connectaddress=&lt;WSL_IP&gt;
+
+# 放行 Windows 防火墙
+netsh advfirewall firewall add rule name="SmartPerfetto Backend" dir=in action=allow protocol=TCP localport=3000
+netsh advfirewall firewall add rule name="SmartPerfetto Frontend" dir=in action=allow protocol=TCP localport=10000
+
+# 验证
+netsh interface portproxy show all</code></pre>
+
+<h4>7. 重启后端（.env 变更需要重启）</h4>
+<pre><code>./scripts/restart-backend.sh</code></pre>
+
+<h4>验证</h4>
+<pre><code># 1. 通过 Windows LAN IP 检查后端
+curl -s http://&lt;WINDOWS_LAN_IP&gt;:3000/health
+
+# 2. 检查 CORS 头
+curl -sI -H "Origin: http://&lt;WINDOWS_LAN_IP&gt;:10000" http://&lt;WINDOWS_LAN_IP&gt;:3000/health | grep -i access-control
+# 预期: Access-Control-Allow-Origin: http://&lt;WINDOWS_LAN_IP&gt;:10000
+
+# 3. 从其他设备浏览器打开
+# http://&lt;WINDOWS_LAN_IP&gt;:10000</code></pre>
+
+<div class="callout callout-warning">
+  <div class="callout-title">&#9888; 注意</div>
+  <ul style="margin:0; padding-left:1.2rem;">
+    <li>WSL2 内部 IP 每次重启可能变化，端口转发规则需要同步更新。可以用 <code>netsh interface portproxy set v4tov4 ...</code> 更新，或先 <code>delete</code> 再 <code>add</code></li>
+    <li>Windows LAN IP 由 DHCP 分配，切换网络后也可能变化，需更新 <code>.env</code> 并重启后端</li>
+    <li>如果只需要本地访问，保持默认 <code>localhost</code> 配置即可，无需添加 LAN IP 和端口转发</li>
+    <li>删除端口转发规则：<code>netsh interface portproxy delete v4tov4 listenport=3000 listenaddress=0.0.0.0</code></li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="config-reference">5. 配置速查表</h2>
+
+<h3>完整 <code>backend/.env</code> 示例</h3>
+<pre><code># ===== 服务配置 =====
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:10000
+
+# ===== AI 模型配置 =====
+# 方式1: Anthropic 直连
+# ANTHROPIC_API_KEY=sk-ant-xxx
+
+# 方式2: 第三方 LLM 代理
+ANTHROPIC_API_KEY=your-proxy-token
+ANTHROPIC_BASE_URL=https://your-proxy-endpoint
+CLAUDE_MODEL=your-main-model
+# CLAUDE_LIGHT_MODEL=your-light-model     # 可选，不设则用默认 haiku
+
+# 方式3: Claude Code 本地认证（无需配置 .env）
+
+# ===== 输出语言 =====
+SMARTPERFETTO_OUTPUT_LANGUAGE=zh-CN       # zh-CN 或 en
+
+# ===== 慢模型超时（非 Anthropic 模型建议调大）=====
+# CLAUDE_FULL_PER_TURN_MS=60000
+# CLAUDE_QUICK_PER_TURN_MS=40000
+# CLAUDE_VERIFIER_TIMEOUT_MS=60000
+# CLAUDE_CLASSIFIER_TIMEOUT_MS=30000
+
+# ===== WSL2/glibc 二进制路径（通常自动检测，无需手动设置）=====
+# CLAUDE_CODE_BINARY_PATH=/path/to/claude-agent-sdk-linux-x64/claude
+
+# ===== 文件上传 =====
+MAX_FILE_SIZE=2147483648                  # 2GB
+UPLOAD_DIR=./uploads
+
+# ===== 局域网访问（可选，仅 localhost 访问可跳过）=====
+# PERFETTO_UI_ORIGIN=http://&lt;LAN_IP&gt;:10000   # trace_processor CORS origin
+# CORS_ORIGINS=http://localhost:10000,...,http://&lt;LAN_IP&gt;:10000  # 后端 CORS 白名单
+
+# ===== API 鉴权（可选）=====
+# SMARTPERFETTO_API_KEY=your-strong-secret
+
+# ===== 旧版 agentv2（已废弃）=====
+# AI_SERVICE=deepseek
+# DEEPSEEK_API_KEY=xxx
+# DEEPSEEK_BASE_URL=https://api.deepseek.com
+# DEEPSEEK_MODEL=deepseek-v4-flash</code></pre>
+
+<h3>端口清单</h3>
+<table>
+  <thead><tr><th>服务</th><th>默认端口</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>Backend API</td><td>3000</td><td>Express 后端</td></tr>
+    <tr><td>Perfetto UI</td><td>10000</td><td>前端界面</td></tr>
+    <tr><td>trace_processor HTTP RPC</td><td>9100-9900</td><td>端口池（自动分配）</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="verification">6. 验证清单</h2>
+
+<p>搭建完成后，按此清单逐一验证：</p>
+
+<ul class="checklist">
+  <li><strong>后端健康</strong>：<code>curl http://localhost:3000/health</code> 返回 <code>{"status":"OK"}</code></li>
+  <li><strong>AI 已配置</strong>：health 响应 <code>aiEngine.configured === true</code></li>
+  <li><strong>前端可访问</strong>：浏览器打开 <code>http://localhost:10000</code> 看到 Perfetto UI</li>
+  <li><strong>trace 上传正常</strong>：上传一个 <code>.pftrace</code> 文件不报错</li>
+  <li><strong>AI 分析可用</strong>：在 AI Assistant 中输入简单问题（如 "应用包名是什么"）能得到回复</li>
+  <li><strong>SDK 二进制正确</strong>：AI 分析不报 "native binary not found" 错误</li>
+</ul>
+
+<h3>快速验证命令</h3>
+<pre><code># 1. 后端健康
+curl -s http://localhost:3000/health | python3 -m json.tool
+
+# 2. AI 配置状态
+curl -s http://localhost:3000/health | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+ai = d.get('aiEngine', {})
+print(f'Configured: {ai.get(\"configured\")}')
+print(f'Provider: {ai.get(\"providerMode\")}')
+print(f'Model: {ai.get(\"model\")}')
+"
+
+# 3. TypeScript 编译检查
+cd backend && npx tsc --noEmit</code></pre>
+
+</body>
+</html>

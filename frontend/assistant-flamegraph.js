@@ -21,7 +21,7 @@
     } catch (_) {
       // ignore
     }
-    return 'http://localhost:3000';
+    return location.protocol + '//' + location.hostname + ':3000';
   }
 
   async function fetchJson(url, options) {

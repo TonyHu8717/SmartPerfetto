@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { query as sdkQuery } from '@anthropic-ai/claude-agent-sdk';
 import type { TraceProcessorService } from '../services/traceProcessorService';
+import { resolveClaudeCodeBinaryPath } from './claudeConfig';
 import { createSkillExecutor } from '../services/skillEngine/skillExecutor';
 import { ensureSkillRegistryInitialized, skillRegistry } from '../services/skillEngine/skillLoader';
 import { getSkillAnalysisAdapter } from '../services/skillEngine/skillAnalysisAdapter';
@@ -236,6 +237,11 @@ function sdkQueryWithRetry(
   // On the first call to next(), we attempt sdkQuery. If it throws, we retry.
   async function* retryableStream() {
     let lastErr: Error | undefined;
+    // Inject glibc binary path on Linux systems where SDK may prefer the musl variant
+    const binaryPath = resolveClaudeCodeBinaryPath();
+    if (binaryPath && !params.options?.pathToClaudeCodeExecutable) {
+      params = { ...params, options: { ...params.options, pathToClaudeCodeExecutable: binaryPath } };
+    }
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       if (closed) return;
       try {

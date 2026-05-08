@@ -5,8 +5,35 @@
 import type { SceneType } from './sceneClassifier';
 import { getRegisteredScenes } from './strategyLoader';
 import { DEFAULT_OUTPUT_LANGUAGE, outputLanguageDisplayName, parseOutputLanguage, type OutputLanguage } from './outputLanguage';
+import path from 'path';
+import fs from 'fs';
 
 export type EffortLevel = 'low' | 'medium' | 'high' | 'max';
+
+/**
+ * Resolve the path to the Claude Code native binary.
+ * On glibc Linux the SDK may prefer the musl variant which fails to execute,
+ * so we explicitly detect and return the glibc variant when appropriate.
+ */
+export function resolveClaudeCodeBinaryPath(): string | undefined {
+  if (process.env.CLAUDE_CODE_BINARY_PATH) return process.env.CLAUDE_CODE_BINARY_PATH;
+  if (process.platform !== 'linux') return undefined;
+
+  // Check if the system uses glibc (not musl) by testing for ld-linux
+  try {
+    fs.readFileSync('/lib64/ld-linux-x86-64.so.2');
+  } catch {
+    // Not a standard glibc system — let SDK decide
+    return undefined;
+  }
+
+  // System is glibc-based; prefer the glibc binary over musl
+  const glibcPkg = `@anthropic-ai/claude-agent-sdk-linux-${process.arch}`;
+  const glibcPath = require.resolve(`${glibcPkg}/claude`);
+  if (fs.existsSync(glibcPath)) return glibcPath;
+
+  return undefined;
+}
 
 export interface ClaudeAgentConfig {
   model: string;

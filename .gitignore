@@ -148,6 +148,22 @@ private/
 # ===================
 .claude/worktrees/
 
+# Claude Code scheduled tasks lock
+.claude/scheduled_tasks.lock
+
+# Claude Code skills (local-only, not for public)
+.claude/skills/
+
+# Backend agent runtime directories
+backend/.agents/
+backend/.claude/
+
+# Feishu sync hash file
+docs/getting-started/.setup-troubleshooting.feishu-hash
+
+# Skills lock file (runtime-generated)
+backend/skills-lock.json
+
 # ===================
 # Agent/skill scratch context (regenerated on run)
 # ===================

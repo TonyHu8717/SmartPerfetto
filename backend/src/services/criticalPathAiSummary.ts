@@ -3,7 +3,7 @@
 // This file is part of SmartPerfetto. See LICENSE for details.
 
 import {type SDKMessage, type SDKResultSuccess, query as sdkQuery} from '@anthropic-ai/claude-agent-sdk';
-import {createSdkEnv, hasClaudeCredentials, loadClaudeConfig} from '../agentv3/claudeConfig';
+import {createSdkEnv, hasClaudeCredentials, loadClaudeConfig, resolveClaudeCodeBinaryPath} from '../agentv3/claudeConfig';
 import {redactObjectForLLM} from '../utils/llmPrivacy';
 import type {CriticalPathAnalysis} from './criticalPathAnalyzer';
 
@@ -285,6 +285,7 @@ export async function summarizeCriticalPathWithAi(
       maxTurns: 1,
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
+      pathToClaudeCodeExecutable: resolveClaudeCodeBinaryPath(),
       env: createSdkEnv(),
       stderr: (data: string) => {
         console.warn(`[CriticalPathAI] SDK stderr: ${data.trimEnd()}`);
