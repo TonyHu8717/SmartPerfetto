@@ -383,12 +383,25 @@ done
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
+# Detect LAN IP (first routable IPv4 — skip WSL2 internal, loopback, link-local)
+LAN_IP=$(ip -4 addr show | grep -oP '(?<=inet )\S+' \
+  | cut -d'/' -f1 \
+  | grep -vE '^(127\.|10\.255\.|169\.254\.)' \
+  | head -1 || true)
+
 echo ""
 echo "=============================================="
 echo "SmartPerfetto is running!"
 echo "=============================================="
-echo "  Frontend:  http://localhost:10000"
-echo "  Backend:   http://localhost:3000"
+if [ -n "$LAN_IP" ]; then
+  echo "  Frontend:  http://${LAN_IP}:10000"
+  echo "  Backend:   http://${LAN_IP}:3000"
+  echo ""
+  echo "  (localhost: http://localhost:10000 / http://localhost:3000)"
+else
+  echo "  Frontend:  http://localhost:10000"
+  echo "  Backend:   http://localhost:3000"
+fi
 echo "  Backend PID:  $BACKEND_PID"
 echo "  Frontend PID: $FRONTEND_PID"
 echo ""

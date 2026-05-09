@@ -7,6 +7,7 @@ import { installEpipeGuard } from './utils/epipeGuard';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import os from 'os';
 
 // Import configuration
 import { serverConfig } from './config';
@@ -66,6 +67,12 @@ const NODE_ENV = serverConfig.nodeEnv;
 
 // Fail fast for trace-analysis-specific credentials when strict startup validation is enabled.
 assertTraceAnalysisConfiguredForStartup();
+
+// Middleware — COEP/COOP compat: allow cross-origin embedding
+app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 
 // Middleware — dynamic CORS: allow any origin whose port is 10000 (Perfetto frontend)
 app.use(cors({
@@ -235,11 +242,27 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Start server
-const server = app.listen(PORT, () => {
+// Start server — bind 0.0.0.0 for LAN access
+function getLanIp(): string {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] ?? []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '0.0.0.0';
+}
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  const lanIp = getLanIp();
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${NODE_ENV}`);
   console.log(`🔗 API URL: http://localhost:${PORT}/api`);
+  if (lanIp !== '0.0.0.0') {
+    console.log(`🌐 LAN access: http://${lanIp}:${PORT}/api`);
+  }
   console.log(`❤️  Health check: http://localhost:${PORT}/health`);
   console.log(`📈 Stats: http://localhost:${PORT}/api/traces/stats`);
 });

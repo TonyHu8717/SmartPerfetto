@@ -16,7 +16,12 @@
     try {
       const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       if (typeof settings.backendUrl === 'string' && settings.backendUrl.trim()) {
-        return settings.backendUrl.replace(/\/+$/, '');
+        const url = settings.backendUrl.replace(/\/+$/, '');
+        // Auto-recalculate if stored URL is auto-generated (hostname:3000 pattern)
+        if (/^https?:\/\/[^:]+:3000$/.test(settings.backendUrl)) {
+          return location.protocol + '//' + location.hostname + ':3000';
+        }
+        return url;
       }
     } catch (_) {
       // ignore

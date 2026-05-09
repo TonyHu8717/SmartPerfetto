@@ -84,6 +84,23 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+function getLanIp() {
+  const os = require('os');
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '0.0.0.0';
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+  const lanIp = getLanIp();
   console.log(`[Frontend] Serving Perfetto UI on http://localhost:${PORT}`);
+  if (lanIp !== '0.0.0.0') {
+    console.log(`[Frontend] LAN access: http://${lanIp}:${PORT}`);
+  }
 });

@@ -2,6 +2,17 @@
 
 AI-driven Perfetto analysis platform for Android performance data.
 
+## Session Startup
+
+每次启动或恢复会话时，执行以下步骤确保 SmartPerfetto 服务可用：
+
+1. **运行 `./start.sh`** 启动后端和前端服务
+2. **复制终端输出的 Frontend 地址**（形如 `http://172.21.237.238:10000`），直接在浏览器中打开即可
+
+`start.sh` 会自动绑定 `0.0.0.0`，优先展示可路由的局域网 IP（自动过滤 WSL2 内部地址 `10.255.x`），确保复制后可直接访问。
+
+如果服务已在运行，用 `curl -fs http://localhost:3000/health` 检查健康状态即可，无需重复启动。
+
 ## Language
 
 用中英文思考，用中文回答。Insight 内容必须使用中文。
